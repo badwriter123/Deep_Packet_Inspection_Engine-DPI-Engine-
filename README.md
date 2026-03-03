@@ -315,8 +315,5 @@ Test coverage includes:
 That's it. Two dependencies. The DPI extractors, connection tracker, rule engine, and report generator are all built from scratch.
 
 ---
+
 <h1>Built with ❤️ by Rohan A M...</h1>
-
-## License
-
-MIT
