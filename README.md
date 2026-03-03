@@ -1,6 +1,6 @@
 # DPI Engine
 
-A high-performance **Deep Packet Inspection** engine written in Go. Reads raw PCAP captures, classifies traffic by application, extracts domains via TLS SNI / HTTP Host / DNS queries, applies configurable blocking rules, and produces a detailed forensic report — all through a multi-threaded, lock-free pipeline.
+A high-performance **Deep Packet Inspection** engine written in Go. Reads raw PCAP files, captures and classifies traffic by application, extracts domains via TLS SNI / HTTP Host / DNS queries, applies configurable blocking rules, and produces a detailed forensic report — all through a multi-threaded, lock-free pipeline.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
