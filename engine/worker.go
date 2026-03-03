@@ -19,6 +19,7 @@ type Worker struct {
 	workerStats   *WorkerStats
 	appCounter    *AppCounter
 	domainCounter *DomainCounter
+	ipTracker     *IPTracker
 	verbose       bool
 }
 
@@ -31,6 +32,7 @@ func NewWorker(
 	stats *Stats,
 	appCounter *AppCounter,
 	domainCounter *DomainCounter,
+	ipTracker *IPTracker,
 	verbose bool,
 ) *Worker {
 	return &Worker{
@@ -42,6 +44,7 @@ func NewWorker(
 		workerStats:   stats.Workers[id],
 		appCounter:    appCounter,
 		domainCounter: domainCounter,
+		ipTracker:     ipTracker,
 		verbose:       verbose,
 	}
 }
@@ -122,7 +125,10 @@ func (w *Worker) processPacket(job *types.PacketJob, ct *tracker.ConnectionTrack
 		return types.ActionDrop
 	}
 
-	// Step 6 — Forward
+	// Step 6 — Track source and destination IP for every forwarded packet
+	w.ipTracker.Track(job.Tuple.SrcIP, job.Tuple.DstIP, job.Tuple.DstPort, uint64(len(job.RawData)), conn.SNI)
+
+	// Step 7 — Forward
 	return types.ActionForward
 }
 

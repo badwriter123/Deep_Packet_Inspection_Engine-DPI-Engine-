@@ -102,46 +102,51 @@ func (r *Reader) Run() error {
 		tuple.SrcIP = binary.BigEndian.Uint32(srcIP4)
 		tuple.DstIP = binary.BigEndian.Uint32(dstIP4)
 
-		// Decode transport layer — must be TCP or UDP
-		transportLayer := packet.TransportLayer()
-		if transportLayer == nil {
-			// ICMP or other non-TCP/UDP protocol — skip silently
-			continue
-		}
-
+		// Decode transport layer — TCP, UDP, or ICMP
 		var tcpFlags uint8
 		var payloadData []byte
 
-		switch t := transportLayer.(type) {
-		case *layers.TCP:
-			tuple.SrcPort = uint16(t.SrcPort)
-			tuple.DstPort = uint16(t.DstPort)
-			tuple.Protocol = 6
-			r.stats.TCPPackets.Add(1)
+		transportLayer := packet.TransportLayer()
+		if transportLayer != nil {
+			switch t := transportLayer.(type) {
+			case *layers.TCP:
+				tuple.SrcPort = uint16(t.SrcPort)
+				tuple.DstPort = uint16(t.DstPort)
+				tuple.Protocol = 6
+				r.stats.TCPPackets.Add(1)
 
-			// Build TCP flags byte
-			if t.FIN {
-				tcpFlags |= types.TCPFlagFIN
-			}
-			if t.SYN {
-				tcpFlags |= types.TCPFlagSYN
-			}
-			if t.RST {
-				tcpFlags |= types.TCPFlagRST
-			}
-			if t.ACK {
-				tcpFlags |= types.TCPFlagACK
-			}
+				// Build TCP flags byte
+				if t.FIN {
+					tcpFlags |= types.TCPFlagFIN
+				}
+				if t.SYN {
+					tcpFlags |= types.TCPFlagSYN
+				}
+				if t.RST {
+					tcpFlags |= types.TCPFlagRST
+				}
+				if t.ACK {
+					tcpFlags |= types.TCPFlagACK
+				}
 
-			payloadData = t.Payload
-		case *layers.UDP:
-			tuple.SrcPort = uint16(t.SrcPort)
-			tuple.DstPort = uint16(t.DstPort)
-			tuple.Protocol = 17
-			r.stats.UDPPackets.Add(1)
-			payloadData = t.Payload
-		default:
-			// Not TCP or UDP — skip
+				payloadData = t.Payload
+			case *layers.UDP:
+				tuple.SrcPort = uint16(t.SrcPort)
+				tuple.DstPort = uint16(t.DstPort)
+				tuple.Protocol = 17
+				r.stats.UDPPackets.Add(1)
+				payloadData = t.Payload
+			default:
+				// Not TCP or UDP — skip
+				continue
+			}
+		} else if icmpLayer := packet.Layer(layers.LayerTypeICMPv4); icmpLayer != nil {
+			// ICMP packet — protocol 1, no ports
+			tuple.Protocol = 1
+			tuple.SrcPort = 0
+			tuple.DstPort = 0
+		} else {
+			// Unknown protocol — skip
 			continue
 		}
 

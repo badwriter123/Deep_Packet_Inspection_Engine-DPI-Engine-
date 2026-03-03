@@ -23,6 +23,7 @@ type DPIEngine struct {
 	stats         *Stats
 	appCounter    *AppCounter
 	domainCounter *DomainCounter
+	ipTracker     *IPTracker
 }
 
 // NewDPIEngine creates a new DPI engine with the given configuration.
@@ -32,6 +33,7 @@ func NewDPIEngine(config Config) *DPIEngine {
 		stats:         NewStats(config.NumWorkers),
 		appCounter:    NewAppCounter(),
 		domainCounter: NewDomainCounter(),
+		ipTracker:     NewIPTracker(),
 	}
 }
 
@@ -65,6 +67,7 @@ func (e *DPIEngine) Run() error {
 			e.stats,
 			e.appCounter,
 			e.domainCounter,
+			e.ipTracker,
 			e.config.Verbose,
 		)
 	}
@@ -120,8 +123,11 @@ func (e *DPIEngine) Run() error {
 		return fmt.Errorf("writer error: %w", writerErr)
 	}
 
+	// Analyze IP activity for suspicious patterns
+	e.ipTracker.Analyze()
+
 	// Print final report
-	e.stats.PrintReport(e.appCounter, e.domainCounter)
+	e.stats.PrintReport(e.appCounter, e.domainCounter, e.ipTracker)
 
 	return nil
 }
